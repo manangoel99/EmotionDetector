@@ -11,17 +11,6 @@
         document.getElementById('submit').click();
     }
 </script>
-<p>
-	{% with messages = get_flashed_messages() %}
-	  {% if messages %}
-		<ul class=flashes>
-		{% for message in messages %}
-		  <li>{{ message }}</li>
-		{% endfor %}
-		</ul>
-	  {% endif %}
-	{% endwith %}
-</p>
 <div class="wrapper">
     <div class="container">
         <h1>Emotion Detector</h1>
@@ -43,3 +32,14 @@
         </form>
     </div>
 </div>
+            {% with messages = get_flashed_messages() %}
+              {% if messages %}
+              <div class="wrapper">
+                <div class="container">            
+                {% for message in messages %}
+                  <h2>{{ message }}</h2>
+                {% endfor %}
+                </div>
+            </div>        
+              {% endif %}
+            {% endwith %}
