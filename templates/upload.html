@@ -1,5 +1,5 @@
 <!doctype html>
-<title>Python Flask File Upload Example</title>
+<title>Landing</title>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
 <script>
     function trigger(e){
@@ -32,14 +32,14 @@
         </form>
     </div>
 </div>
-            {% with messages = get_flashed_messages() %}
-              {% if messages %}
-              <div class="wrapper">
-                <div class="container">            
-                {% for message in messages %}
-                  <h2>{{ message }}</h2>
-                {% endfor %}
-                </div>
-            </div>        
-              {% endif %}
-            {% endwith %}
+{% with messages = get_flashed_messages() %}
+    {% if messages %}
+    <div class="wrapper">
+    <div class="container">            
+    {% for message in messages %}
+        <h2>{{ message }}</h2>
+    {% endfor %}
+    </div>
+</div>        
+    {% endif %}
+{% endwith %}

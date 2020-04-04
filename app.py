@@ -3,7 +3,7 @@ import urllib.request
 from flask import Flask, flash, request, redirect, render_template
 from werkzeug.utils import secure_filename
 
-UPLOAD_FOLDER = './uploads'
+UPLOAD_FOLDER = './static'
 
 app = Flask(__name__)
 app.secret_key = "SECRET_KEY"
@@ -38,11 +38,10 @@ def upload_file():
             filename = secure_filename(file.filename)
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], filename))
             flash('Successfully Uploaded')
-            return redirect('/')
+            return render_template('result.html', fileName=filename)
         else:
             flash('Allowed file type is mp4')
             return redirect(request.url)
-
     
 if __name__ == "__main__":
     app.run(debug=True)
