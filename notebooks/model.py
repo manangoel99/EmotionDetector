@@ -6,19 +6,18 @@ import face_recognition
 import numpy as np
 import ray
 from imutils import face_utils
-from keras.models import load_model
 import glob
 from preprocess import preprocess_input
 from utils import *
 
-ray.init(num_cpus=8, num_gpus=1, ignore_reinit_error=True)
+ray.init(num_cpus=16, num_gpus=1)
 time.sleep(2)
 
 @ray.remote
 class Model(object):
-	from keras.models import load_model
 
 	def __init__(self):
+		from keras.models import load_model
 		emotion_model_path = './model.hdf5'
 		self.labels = {
 			0:'angry',
@@ -60,73 +59,16 @@ class Model(object):
 		each_face_emotion = []
 		for face in faces:
 			each_face_emotion.append(self.predictFace(gray_image, face))
-		return each_face_emotion
 
-def process_vid(vid_path):
-	cap = cv2.VideoCapture(vid_path)
-	all_emotions = []
-	start = time.time()
-	detect = Model.remote()
-	while cap.isOpened():
-		ret, frame = cap.read()
-		if frame is None:
-			break
-		all_emotions.append(detect.predictFrame.remote(frame))
-
-	return all_emotions
-
-frame_window = 10
-emotion_offsets = (20, 40)
-
-def generate_emotion_video(emotion_text_arr,file_path):
-	cap = cv2.VideoCapture(file_path)
-	while cap.isOpened():
-		ret,frame = cap.read()
-		if frame is None:
-			break
-		height, width, layers = frame.shape
-		size = (width,height)
-		break
-
-	cap.release()
-	c = 0
-	cap = cv2.VideoCapture(file_path)
-	out = cv2.VideoWriter('emotion_video.avi',cv2.VideoWriter_fourcc(*'DIVX'), 15, size)
-	emotion_target_size = (64,64)
-	while cap.isOpened() and c<len(emotion_text_arr):
-		ret, frame = cap.read()
-		if frame is None:
-			break
-		if emotion_text_arr[c] == []:
-			c+=1
-			out.write(frame)
-			continue
-		gray_image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-		rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-		detector = dlib.get_frontal_face_detector()
-		faces = detector(rgb_image)
-		j = 0
-		for face_coordinates in faces:
-			x1, x2, y1, y2 = apply_offsets(face_utils.rect_to_bb(face_coordinates), emotion_offsets)
-			gray_face = gray_image[y1:y2, x1:x2]
-			try:
-				gray_face = cv2.resize(gray_face, emotion_target_size)
-			except:
-				continue
-
-			gray_face = preprocess_input(gray_face, True)
-			gray_face = np.expand_dims(gray_face, 0)
-			gray_face = np.expand_dims(gray_face, -1)
-
-			if emotion_text_arr[c][j] == 'angry':
+			if each_face_emotion[-1] == 'angry':
 				color = np.asarray((255, 0, 0))
-			elif emotion_text_arr[c][j] == 'sad':
+			elif each_face_emotion[-1] == 'sad':
 				color = np.asarray((0, 0, 255))
-			elif emotion_text_arr[c][j] == 'happy':
+			elif each_face_emotion[-1] == 'happy':
 				color = np.asarray((255, 255, 0))
-			elif emotion_text_arr[c][j] == 'surprise':
+			elif each_face_emotion[-1] == 'surprise':
 				color = np.asarray((0, 255, 255))
-			elif emotion_text_arr[c][j] == 'disgusted':
+			elif each_face_emotion[-1] == 'disgust':
 				color = np.asarray((0, 255, 0))				
 			else:
 				color = np.asarray((255, 255, 255))
@@ -134,17 +76,50 @@ def generate_emotion_video(emotion_text_arr,file_path):
 			color = color.astype(int)
 			color = color.tolist()
 
-			name = emotion_text_arr[c][j]
+			name = each_face_emotion[-1]
 			
-			draw_bounding_box(face_utils.rect_to_bb(face_coordinates), rgb_image, color)
-			draw_text(face_utils.rect_to_bb(face_coordinates), rgb_image, name,color, 0, -45, 0.5, 1)
-			j += 1
+			draw_bounding_box(face_utils.rect_to_bb(face), rgb_image, color)
+			draw_text(face_utils.rect_to_bb(face), rgb_image, name,color, 0, -45, 0.5, 1)
+		
+		tframe = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
+		return each_face_emotion,tframe
 
-		frame = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
-		c+=1
-		out.write(frame)
-	
+	# def getVideo(self, cap):
+	#     all_emotions = []
+	#     while cap.isOpened():
+	#         ret, frame = cap.read()
+	#         if frame is None:
+	#             break
+	#         all_emotions.append(self.predictFrame(frame))
+	#     return all_emotions
+def process_vid(vid_path):
+	cap = cv2.VideoCapture(vid_path)
+	all_emotions = []
+	detect = Model.remote()
+	while cap.isOpened():
+		ret, frame = cap.read()
+		if frame is None:
+			break
+		emotion = detect.predictFrame.remote(frame)
+		all_emotions.append(emotion)
+
+	return all_emotions
+
+def generate_emotion_video(ray_list,file_path):
+	cap = cv2.VideoCapture(file_path)
+	fps = cap.get(cv2.CAP_PROP_FPS)
+	while cap.isOpened():
+		ret,frame = cap.read()
+		if frame is None:
+			break
+		height, width, layers = frame.shape
+		size = (width,height)
+		break
 	cap.release()
+
+	out = cv2.VideoWriter('emotion_video.mp4',cv2.VideoWriter_fourcc(*'MP4V'), fps, size)
+	for iterx in ray_list:
+		out.write(iterx[1])
 
 if __name__ == '__main__':
 	start = time.time()
