@@ -4,14 +4,21 @@ import cv2
 import dlib
 import face_recognition
 import numpy as np
+import ray
 from imutils import face_utils
-from keras.models import load_model
 
 from preprocess import preprocess_input
 from utils import *
 
+ray.init(num_cpus=8, num_gpus=1, ignore_reinit_error=True)
+time.sleep(2)
+
+@ray.remote
 class Model(object):
+
     def __init__(self):
+        from keras.models import load_model
+
         emotion_model_path = './model.hdf5'
         self.labels = {
             0:'angry',
@@ -61,12 +68,12 @@ def process_vid(vid_path):
     cap = cv2.VideoCapture(vid_path)
     all_emotions = []
     start = time.time()
-    detect = Model()
+    detect = Model.remote()
     while cap.isOpened():
         ret, frame = cap.read()
         if frame is None:
             break
-        all_emotions.append(detect.predictFrame(frame))
+        all_emotions.append(detect.predictFrame.remote(frame))
 
     return all_emotions
 
@@ -78,3 +85,5 @@ if __name__ == '__main__':
     print(end - start)
     print(len(emotions))
     print("==================")
+
+    # print(ray.get(all_emotions))
