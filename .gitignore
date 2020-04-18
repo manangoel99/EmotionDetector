@@ -1,4 +1,6 @@
-.env
-.pyc
+*.pyc
 *.iml
 .directory
+.vscode
+.ipynb_checkpoints
+__pycache__
