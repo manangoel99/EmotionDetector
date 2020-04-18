@@ -1,0 +1,45 @@
+<!doctype html>
+<title>Python Flask File Upload Example</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+<script>
+    function trigger(e){
+        e.preventDefault();
+        document.getElementById('file-upload').click();
+    }
+    function triggerForm(){
+        console.log("OLA");
+        document.getElementById('submit').click();
+    }
+</script>
+<div class="wrapper">
+    <div class="container">
+        <h1>Emotion Detector</h1>
+        <p> Upload file here to proceed </p>
+        <form method="post" action="/" enctype="multipart/form-data">   
+            <div class="upload-container">
+                <div class="border-container">
+                    <div class="icons fa-4x">
+                    <i class="fas fa-file-image" data-fa-transform="shrink-3 down-2 left-6 rotate--45"></i>
+                    <i class="fas fa-file-alt" data-fa-transform="shrink-2 up-4"></i>
+                    <i class="fas fa-file-pdf" data-fa-transform="shrink-3 down-2 right-6 rotate-45"></i>
+                    </div>
+                    <input type="file" name="file" id="file-upload" onchange="triggerForm()" style="opacity: 0;">   
+                    <p>Drag and drop files here, or 
+                    <a href="" id="file-browser" onclick= "trigger(event)">browse</a> your computer.</p>
+                    <input id="submit" type="submit" value="Submit" style="opacity: 0;">
+                </div>
+            </div>    
+        </form>
+    </div>
+</div>
+            {% with messages = get_flashed_messages() %}
+              {% if messages %}
+              <div class="wrapper">
+                <div class="container">            
+                {% for message in messages %}
+                  <h2>{{ message }}</h2>
+                {% endfor %}
+                </div>
+            </div>        
+              {% endif %}
+            {% endwith %}
