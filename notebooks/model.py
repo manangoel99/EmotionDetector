@@ -11,7 +11,7 @@ import glob
 from preprocess import preprocess_input
 from utils import *
 
-ray.init(num_cpus=8, num_gpus=1, ignore_reinit_error=True, webui_host='0.0.0.0')
+ray.init(num_cpus=8, num_gpus=1, ignore_reinit_error=True)
 time.sleep(2)
 
 @ray.remote
@@ -83,22 +83,148 @@ def process_vid(vid_path):
 
 	return all_emotions
 
-img_map,height,widht,layers = {},-1,-1,-1
-def generate_emoji_video(emotion_text):
-	out = cv2.VideoWriter('emoji_video.avi',cv2.VideoWriter_fourcc(*'DIVX'), 60, size)
-	for emotion in emotion_text:
-		for it in emotion:
-			if it == None:
-				break
-			out.write(img_map[it])
-	out.release()
+# known_face_names = [
+#     "Barack Obama",
+#     "Trump",
+#     "Modi",
+#     "Vijay"
+# ]
+# face_locations = []
+# face_encodings = []
+# face_names = []
+# process_this_frame = True
+
+frame_window = 10
+emotion_offsets = (20, 40)
+
+# obama_image = face_recognition.load_image_file("images/Obama.jpg")
+# obama_face_encoding = face_recognition.face_encodings(obama_image)[0]
+
+# trump_image = face_recognition.load_image_file("images/Trump.jpg")
+# trump_face_encoding = face_recognition.face_encodings(trump_image)[0]
+
+# modi_image = face_recognition.load_image_file("images/Modi.jpg")
+# modi_face_encoding = face_recognition.face_encodings(modi_image)[0]
+
+# vj_image = face_recognition.load_image_file("images/Vijay.jpg")
+# vj_face_encoding = face_recognition.face_encodings(vj_image)[0]
+
+# known_face_encodings = [
+#     obama_face_encoding,
+#     trump_face_encoding,
+#     modi_face_encoding,
+#     vj_face_encoding
+# ]
+
+# def face_compare(frame,process_this_frame):
+# 	# Resize frame of video to 1/4 size for faster face recognition processing
+# 	small_frame = cv2.resize(frame, (0, 0), fx=0.50, fy=0.50)
+
+# 	# Convert the image from BGR color (which OpenCV uses) to RGB color (which face_recognition uses)
+# 	rgb_small_frame = small_frame[:, :, ::-1]
+
+# 	# Only process every other frame of video to save time
+# 	if process_this_frame:
+# 		# Find all the faces and face encodings in the current frame of video
+# 		face_locations = face_recognition.face_locations(rgb_small_frame)
+# 		face_encodings = face_recognition.face_encodings(rgb_small_frame, face_locations)
+
+# 		face_names = []
+# 		for face_encoding in face_encodings:
+# 			# See if the face is a match for the known face(s)
+# 			matches = face_recognition.compare_faces(known_face_encodings, face_encoding)
+# 			name = "Unknown"
+
+# 			# If a match was found in known_face_encodings, just use the first one.
+# 			if True in matches:
+# 				first_match_index = matches.index(True)
+# 				name = known_face_names[first_match_index]
+
+# 			face_names.append(name)
+
+# 	process_this_frame = not process_this_frame
+
+# 	return face_names
+
+
+def generate_emotion_video(emotion_text_arr,file_path):
+	cap = cv2.VideoCapture(file_path)
+	while cap.isOpened():
+		ret,frame = cap.read()
+		if frame is None:
+			break
+		height, width, layers = frame.shape
+		size = (width,height)
+		break
+
+	cap.release()
+	c = 0
+	cap = cv2.VideoCapture(file_path)
+	out = cv2.VideoWriter('emotion_video.avi',cv2.VideoWriter_fourcc(*'DIVX'), 15, size)
+	emotion_target_size = (64,64)
+	while cap.isOpened() and c<len(emotion_text_arr):
+		ret, frame = cap.read()
+		if frame is None:
+			break
+		if emotion_text_arr[c] == []:
+			c+=1
+			out.write(frame)
+			continue
+		gray_image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+		rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+		detector = dlib.get_frontal_face_detector()
+		faces = detector(rgb_image)
+		j = 0
+		for face_coordinates in faces:
+			x1, x2, y1, y2 = apply_offsets(face_utils.rect_to_bb(face_coordinates), emotion_offsets)
+			gray_face = gray_image[y1:y2, x1:x2]
+			try:
+				gray_face = cv2.resize(gray_face, emotion_target_size)
+			except:
+				continue
+
+			gray_face = preprocess_input(gray_face, True)
+			gray_face = np.expand_dims(gray_face, 0)
+			gray_face = np.expand_dims(gray_face, -1)
+
+			# if len(emotion_window) > frame_window:
+			# 	emotion_window.pop(0)
+			# try:
+			# 	emotion_mode = mode(emotion_window)
+			# except:
+			# 	continue
+
+
+
+			if emotion_text_arr[c][j] == 'angry':
+				color = np.asarray((255, 0, 0))
+			elif emotion_text_arr[c][j] == 'sad':
+				color = np.asarray((0, 0, 255))
+			elif emotion_text_arr[c][j] == 'happy':
+				color = np.asarray((255, 255, 0))
+			elif emotion_text_arr[c][j] == 'surprise':
+				color = np.asarray((0, 255, 255))
+			elif emotion_text_arr[c][j] == 'disgusted':
+				color = np.asarray((0, 255, 0))				
+			else:
+				color = np.asarray((255, 255, 255))
+
+			color = color.astype(int)
+			color = color.tolist()
+
+			name = emotion_text_arr[c][j]
+			
+			draw_bounding_box(face_utils.rect_to_bb(face_coordinates), rgb_image, color)
+			draw_text(face_utils.rect_to_bb(face_coordinates), rgb_image, name,color, 0, -45, 0.5, 1)
+			j += 1
+
+		frame = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
+		c+=1
+		out.write(frame)
+	
+	cap.release()
 
 if __name__ == '__main__':
-	for file in glob.glob('../emoji/*.png'):
-		img = cv2.imread(file)
-		height, width, layers = img.shape
-		size = (width,height)
-		img_map[(file.split('/')[2]).split('.')[0]] = img
 	start = time.time()
 	emotions = process_vid("./testvdo.mp4")
 	end = time.time()
@@ -107,5 +233,5 @@ if __name__ == '__main__':
 	print(len(emotions))
 	print("==================")
 	# get_emoji_video(emotions)
-	generate_emoji_video(ray.get(emotions))
+	generate_emotion_video(ray.get(emotions),"./testvdo.mp4")
 	# print(ray.get(all_emotions))
