@@ -34,6 +34,7 @@ RUN cd ~ && \
 COPY ./requirements.txt /app/requirements.txt
 
 WORKDIR /app
+RUN mkdir uploads
 
 RUN pip --version
 RUN python -m pip install -r requirements.txt
