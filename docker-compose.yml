@@ -1,7 +1,43 @@
-version: '3'
+version: '2'
 services:
-  web:
-    build: .
-    ports:
-      - "5000:5000"
-      - "8265:8265"
+    web:
+        build: .
+        command: python manage.py run -h 0.0.0.0 -p 3000
+        ports:
+            - 3000:3000
+            - 8265:8265
+        env_file: .env
+        restart: always
+        volumes: 
+            - ./:/home/app
+        depends_on: 
+            - "db"
+    
+    redis:
+        image: "redis:alpine"
+    
+    db:
+        image: "postgres:12-alpine"
+        volumes: 
+            - postgres_data:/var/lib/postgresql/data/
+        environment: 
+            - POSTGRES_USER=hello_flask
+            - POSTGRES_PASSWORD=hello_flask
+            - POSTGRES_DB=hello_flask_dev
+
+    worker:
+        build:
+            context: .
+            args:
+                - "FLASK_ENV=development"
+        command: celery worker -B -l info -A server.celery --autoscale=10,3
+        depends_on: 
+            - "redis"
+        env_file: 
+            - ".env"
+
+
+volumes:
+    redis: {}
+    postgres_data:
+      

@@ -31,16 +31,15 @@ RUN cd ~ && \
     python3 setup.py install --yes USE_AVX_INSTRUCTIONS
 
 
-COPY ./requirements.txt /app/requirements.txt
+WORKDIR /home/app
+RUN mkdir public
+#If we add the requirements and install dependencies first, docker can use cache if requirements don't change
+ADD requirements.txt /home/app
+ADD requirements1.txt /home/app
 
-WORKDIR /app
-ENV FLASK_APP app.py
-ENV FLASK_RUN_HOST 0.0.0.0
-RUN mkdir uploads
+RUN pip install -r requirements.txt
+RUN pip install -r requirements1.txt
 
-RUN pip --version
-RUN python -m pip install -r requirements.txt
-
-COPY . /app
-
-CMD ["flask", "run"]
+ADD . /home/app
+ENV FLASK_APP /home/app/server.py
+ENV FLASK_ENV development

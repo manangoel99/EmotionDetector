@@ -1,0 +1,32 @@
+<!doctype html>
+<title>Result</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js" integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js" integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q" crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js" integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl" crossorigin="anonymous"></script>
+    <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+<link href="/public/app.css" rel="stylesheet">
+<body class="home">
+    <div class="container">
+        <div class="login-page clearfix">
+            <div class="logged-in-box auth0-box logged-in">
+                <h2>Welcome {{userinfo['name']}}</h2>
+                <a id="qsLogoutBtn" class="btn btn-primary btn-lg btn-logout btn-block" href="/logout">Logout</a>
+            </div>
+        </div>
+    </div>
+    <div class="wrapper">
+        <div class="container">
+            <h1>RESULT</h1>
+            {% if fileName %}
+            <div class="embed-responsive embed-responsive-16by9">
+                <video controls autoplay class="embed-responsive-item">
+                    <source src="{{ url_for('static', filename=fileName) }}" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>        
+            {% endif %}
+        </div>
+    </div>
+</body>

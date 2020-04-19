@@ -4,16 +4,16 @@ import cv2
 import dlib
 import face_recognition
 import numpy as np
-import ray
 from imutils import face_utils
 import glob
 from preprocess import preprocess_input
 from utils import *
 
-ray.init(num_cpus=16, num_gpus=1)
-time.sleep(2)
+from celery import Celery, group
+from celery.task import task
 
-@ray.remote
+celery = Celery(broker='redis://localhost:6379/0', backend='redis://localhost:6379/0')
+
 class Model(object):
 
 	def __init__(self):
@@ -33,6 +33,7 @@ class Model(object):
 		self.detector = dlib.get_frontal_face_detector()
 		self.emotion_classifier = load_model(emotion_model_path)
 	
+
 	def predictFace(self, gray_image, face):
 		emotion_target_size = self.emotion_classifier.input_shape[1:3]
 
@@ -52,6 +53,7 @@ class Model(object):
 		emotion_text = self.labels[emotion_label_arg]
 		return emotion_text
 
+	@task
 	def predictFrame(self, frame):
 		gray_image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 		rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -92,18 +94,28 @@ class Model(object):
 	#             break
 	#         all_emotions.append(self.predictFrame(frame))
 	#     return all_emotions
+
+# celery.register_task(Model.predictFrame)
+
+@task
 def process_vid(vid_path):
 	cap = cv2.VideoCapture(vid_path)
 	all_emotions = []
-	detect = Model.remote()
+	detect = Model()
+	frames = []
 	while cap.isOpened():
 		ret, frame = cap.read()
-		if frame is None:
-			break
-		emotion = detect.predictFrame.remote(frame)
-		all_emotions.append(emotion)
+		frames.append(frame)
 
+	g = group([Model.predictFrame.s(detect, frame) for frame in frames])
+	result = g.apply_async()
+
+	while result.ready() is False:
+		continue
+	
+	print(result.get())
 	return all_emotions
+
 
 def generate_emotion_video(ray_list,file_path):
 	cap = cv2.VideoCapture(file_path)
@@ -123,11 +135,15 @@ def generate_emotion_video(ray_list,file_path):
 
 if __name__ == '__main__':
 	start = time.time()
-	emotions = process_vid("./testvdo.mp4")
+	celery.register_task(process_vid)
+
+	emotions = process_vid.delay("./testvdo.mp4")
+
+	while emotions.ready() == False:
+		continue
 	end = time.time()
 	print("==================")
 	print(end - start)
 	print(len(emotions))
 	print("==================")
-	# get_emoji_video(emotions)
-	# print(ray.get(all_emotions))
+	generate_emotion_video(ray.get(emotions),"./testvdo.mp4")
