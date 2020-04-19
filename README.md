@@ -6,7 +6,7 @@ This sample demonstrates how to add authentication to a Python web app using Aut
 
 Install Docker from https://docs.docker.com/engine/install/ubuntu/
 Install docker-compose from https://docs.docker.com/compose/install/
-
+To run docker without sudo use https://docs.docker.com/engine/install/linux-postinstall/
 Once installed 
 ```
 git clone https://github.com/manangoel99/EmotionDetectorExtra.git
