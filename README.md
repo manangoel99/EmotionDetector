@@ -4,6 +4,25 @@ This sample demonstrates how to add authentication to a Python web app using Aut
 
 # Running the App
 
+Install Docker from https://docs.docker.com/engine/install/ubuntu/
+Install docker-compose from https://docs.docker.com/compose/install/
+
+Once installed 
+```
+git clone https://github.com/manangoel99/EmotionDetectorExtra.git
+cd EmotionDetectorExtra
+docker-compose up --build
+```
+Create a new tab of the terminal and to set up the database
+```
+docker-compose exec web python manage.py create_db
+```
+To run commands inside the docker-conaitner
+```
+docker-compose exec web bash
+```
+Please do not push the public folder
+-------------------------------
 To run the sample, make sure you have `python` and `pip` installed.
 
 Rename `.env.example` to `.env` and populate it with the client ID, domain, secret, callback URL and audience for your
