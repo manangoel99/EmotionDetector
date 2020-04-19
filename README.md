@@ -31,3 +31,9 @@ To stop, run
 ```
 docker stop <container-id>
 ```
+
+-------------
+One command to run all
+```
+docker-compose up
+```

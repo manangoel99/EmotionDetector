@@ -34,6 +34,8 @@ RUN cd ~ && \
 COPY ./requirements.txt /app/requirements.txt
 
 WORKDIR /app
+ENV FLASK_APP app.py
+ENV FLASK_RUN_HOST 0.0.0.0
 RUN mkdir uploads
 
 RUN pip --version
@@ -41,6 +43,4 @@ RUN python -m pip install -r requirements.txt
 
 COPY . /app
 
-ENTRYPOINT ["python"]
-
-CMD ["app.py"]
+CMD ["flask", "run"]
