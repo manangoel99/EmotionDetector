@@ -29,9 +29,10 @@ services:
             context: .
             args:
                 - "FLASK_ENV=development"
-        command: celery worker -l info -A server.celery --pool=gevent --concurrency=10
+        command: celery worker -l info -A server.celery --pool=threads --max-tasks-per-child=1 --max-memory-per-child=1024 --autoscale=10,3
         depends_on: 
             - "redis"
+            - "web"
         env_file: 
             - ".env"
 

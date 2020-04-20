@@ -27,29 +27,14 @@ from werkzeug.utils import secure_filename
 import constants
 from notebooks.preprocess import preprocess_input
 from notebooks.utils import *
-from keras.models import load_model
-
+import ray
+ray.init(num_cpus=4, ignore_reinit_error=True)
 
 logging.basicConfig(level=logging.DEBUG)
 
 ENV_FILE = find_dotenv()
 if ENV_FILE:
     load_dotenv(ENV_FILE)
-
-emotion_model_path = './notebooks/model.hdf5'
-labels = {
-	0:'angry',
-	1:'disgust',
-	2:'fear',
-	3:'happy',
-	4:'sad',
-	5:'surprise',
-	6:'neutral'
-}
-frame_window = 10
-emotion_offsets = (20, 40)
-detector = dlib.get_frontal_face_detector()
-emotion_classifier = load_model(emotion_model_path)
 
 AUTH0_CALLBACK_URL = env.get(constants.AUTH0_CALLBACK_URL)
 AUTH0_CLIENT_ID = env.get(constants.AUTH0_CLIENT_ID)
@@ -70,7 +55,6 @@ db = SQLAlchemy(app)
 
 celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
 celery.conf.update(app.config)
-
 class User(db.Model):
     __tablename__ = "users"
 
@@ -88,6 +72,7 @@ class Video(db.Model):
     user_id = db.Column(db.Integer, nullable=False)
     video_path = db.Column(db.String(128))
     video_title = db.Column(db.String(128))
+    processed = db.Column(db.Boolean, default=False)
 
     def __init__(self, user_id, vid_title):
         self.user_id = user_id
@@ -173,9 +158,9 @@ def add_vid_path(self, video_id):
     db.session.add(vid)
     db.session.commit()
 
-@celery.task
 def generate_emotion_video(ray_list, vid_path):
     cap = cv2.VideoCapture(vid_path)
+    logging.info(vid_path)
     fps = cap.get(cv2.CAP_PROP_FPS)
     while cap.isOpened():
         ret,frame = cap.read()
@@ -185,81 +170,107 @@ def generate_emotion_video(ray_list, vid_path):
         size = (width,height)
         break
     cap.release()
-    out = cv2.VideoWriter(vid_path + '_emotion',cv2.VideoWriter_fourcc(*'MP4V'), fps, size)
+    out = cv2.VideoWriter(vid_path + '_emotion.mp4',cv2.VideoWriter_fourcc(*'MP4V'), fps, size)
+    ray_list = ray.get(ray_list)
     for iterx in ray_list:
         out.write(iterx[1])
 
-def predictFace(gray_image, face):
-    
-    emotion_target_size = emotion_classifier.input_shape[1:3]  
-    x1, x2, y1, y2 = apply_offsets(face_utils.rect_to_bb(face), emotion_offsets)
-    gray_face = gray_image[y1:y2, x1:x2]    
-    try:
-        gray_face = cv2.resize(gray_face, (emotion_target_size))
-    except:
-        return None
-    gray_face = preprocess_input(gray_face, True)
-    gray_face = np.expand_dims(gray_face, 0)
-    gray_face = np.expand_dims(gray_face, -1)
-    emotion_prediction = emotion_classifier.predict(gray_face)
-    emotion_probability = np.max(emotion_prediction)
-    emotion_label_arg = np.argmax(emotion_prediction)
-    emotion_text = labels[emotion_label_arg]
-    return emotion_text
+    out.release()
+    video = Video.query.filter_by(video_path=vid_path[len(UPLOAD_FOLDER) + 1:]).first()
+    video.processed = True
+    db.session.commit()
+    return 1
 
-@celery.task
-def predictFrame(frame):
-    logging.info(frame)
-    frame = np.array(frame)
-    gray_image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-    faces = detector(rgb_image)
-    each_face_emotion = []
-    for face in faces:
-    	each_face_emotion.append(predictFace(gray_image, face))    
-    	if each_face_emotion[-1] == 'angry':
-    		color = np.asarray((255, 0, 0))
-    	elif each_face_emotion[-1] == 'sad':
-    		color = np.asarray((0, 0, 255))
-    	elif each_face_emotion[-1] == 'happy':
-    		color = np.asarray((255, 255, 0))
-    	elif each_face_emotion[-1] == 'surprise':
-    		color = np.asarray((0, 255, 255))
-    	elif each_face_emotion[-1] == 'disgust':
-    		color = np.asarray((0, 255, 0))				
-    	else:
-    		color = np.asarray((255, 255, 255)) 
-    	color = color.astype(int)
-    	color = color.tolist()  
-    	name = each_face_emotion[-1]
+@ray.remote
+class Model(object):
 
-    	draw_bounding_box(face_utils.rect_to_bb(face), rgb_image, color)
-    	draw_text(face_utils.rect_to_bb(face), rgb_image, name,color, 0, -45, 0.5, 1)
+	def __init__(self):
+		from keras.models import load_model
+		emotion_model_path = './notebooks/model.hdf5'
+		self.labels = {
+			0:'angry',
+			1:'disgust',
+			2:'fear',
+			3:'happy',
+			4:'sad',
+			5:'surprise',
+			6:'neutral'
+		}
+		self.frame_window = 10
+		self.emotion_offsets = (20, 40)
+		self.detector = dlib.get_frontal_face_detector()
+		self.emotion_classifier = load_model(emotion_model_path)
+	
 
-    tframe = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
-    return each_face_emotion,tframe
+	def predictFace(self, gray_image, face):
+		emotion_target_size = self.emotion_classifier.input_shape[1:3]
 
-@celery.task
+		x1, x2, y1, y2 = apply_offsets(face_utils.rect_to_bb(face), self.emotion_offsets)
+		gray_face = gray_image[y1:y2, x1:x2]
+
+		try:
+			gray_face = cv2.resize(gray_face, (emotion_target_size))
+		except:
+			return None
+		gray_face = preprocess_input(gray_face, True)
+		gray_face = np.expand_dims(gray_face, 0)
+		gray_face = np.expand_dims(gray_face, -1)
+		emotion_prediction = self.emotion_classifier.predict(gray_face)
+		emotion_probability = np.max(emotion_prediction)
+		emotion_label_arg = np.argmax(emotion_prediction)
+		emotion_text = self.labels[emotion_label_arg]
+		return emotion_text
+
+	def predictFrame(self, frame):
+		gray_image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+		rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+		faces = self.detector(rgb_image)
+		each_face_emotion = []
+		for face in faces:
+			each_face_emotion.append(self.predictFace(gray_image, face))
+
+			if each_face_emotion[-1] == 'angry':
+				color = np.asarray((255, 0, 0))
+			elif each_face_emotion[-1] == 'sad':
+				color = np.asarray((0, 0, 255))
+			elif each_face_emotion[-1] == 'happy':
+				color = np.asarray((255, 255, 0))
+			elif each_face_emotion[-1] == 'surprise':
+				color = np.asarray((0, 255, 255))
+			elif each_face_emotion[-1] == 'disgust':
+				color = np.asarray((0, 255, 0))				
+			else:
+				color = np.asarray((255, 255, 255))
+
+			color = color.astype(int)
+			color = color.tolist()
+
+			name = each_face_emotion[-1]
+			
+			draw_bounding_box(face_utils.rect_to_bb(face), rgb_image, color)
+			draw_text(face_utils.rect_to_bb(face), rgb_image, name,color, 0, -45, 0.5, 1)
+		
+		tframe = cv2.cvtColor(rgb_image, cv2.COLOR_RGB2BGR)
+		return each_face_emotion,tframe
+
+@ray.remote
 def process_vid(vid_path):
+    logging.info("Process Vid")
     cap = cv2.VideoCapture(vid_path)
     all_emotions = []
+    detect = Model.remote()
     frames = []
     while cap.isOpened():
         ret, frame = cap.read()
         if frame is None:
             break
-        frames.append(frame.tolist())
-    all_emotions = group([predictFrame.s(frame) for frame in frames])
-    task = all_emotions.apply()
-    task = generate_emotion_video.apply_async(args=[all_emotions.get(), vid_path])
-	
+        all_emotions.append(detect.predictFrame.remote(frame))
+    task = generate_emotion_video(all_emotions, vid_path)
+    logging.info(task)
     
 celery.register_task(create_user)
 celery.register_task(create_vid)
 celery.register_task(add_vid_path)
-celery.register_task(predictFrame)
-celery.register_task(predictFrame)
-celery.register_task(generate_emotion_video)
 
 
 def allowed_file(filename):
@@ -270,9 +281,7 @@ def vid(user_id, video_id):
     logging.info("In Function")
     vid_path = os.path.join(app.config["UPLOAD_FOLDER"], str(user_id), str(video_id))
     start = time.time()
-    task = process_vid.apply_async(args=[vid_path])
-    # emotions = ray.get(task)
-    # task = generate_emotion_video.apply_async(args=[emotions, vid_path])
+    task = process_vid.remote(vid_path)
     logging.info(task)
     end = time.time()
     logging.info(end - start)

@@ -9,11 +9,12 @@ import glob
 from preprocess import preprocess_input
 from utils import *
 
-from celery import Celery, group
-from celery.task import task
-
-celery = Celery(broker='redis://localhost:6379/0', backend='redis://localhost:6379/0')
-
+# from celery import Celery, group
+# from celery.task import task
+import ray
+ray.init(num_cpus=4)
+# celery = Celery(broker='redis://localhost:6379/0', backend='redis://localhost:6379/0')
+@ray.remote
 class Model(object):
 
 	def __init__(self):
@@ -53,7 +54,6 @@ class Model(object):
 		emotion_text = self.labels[emotion_label_arg]
 		return emotion_text
 
-	@task
 	def predictFrame(self, frame):
 		gray_image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 		rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -97,23 +97,17 @@ class Model(object):
 
 # celery.register_task(Model.predictFrame)
 
-@task
 def process_vid(vid_path):
 	cap = cv2.VideoCapture(vid_path)
 	all_emotions = []
-	detect = Model()
+	detect = Model.remote()
 	frames = []
 	while cap.isOpened():
 		ret, frame = cap.read()
-		frames.append(frame)
+		if frame is None:
+			break
+		all_emotions.append(detect.predictFrame.remote(frame))
 
-	g = group([Model.predictFrame.s(detect, frame) for frame in frames])
-	result = g.apply_async()
-
-	while result.ready() is False:
-		continue
-	
-	print(result.get())
 	return all_emotions
 
 
@@ -135,15 +129,14 @@ def generate_emotion_video(ray_list,file_path):
 
 if __name__ == '__main__':
 	start = time.time()
-	celery.register_task(process_vid)
 
-	emotions = process_vid.delay("./testvdo.mp4")
+	emotions = process_vid("./testvdo.mp4")
 
-	while emotions.ready() == False:
-		continue
+	# while emotions.ready() == False:
+	# 	continue
 	end = time.time()
 	print("==================")
 	print(end - start)
-	print(len(emotions))
+	# print(len(emotions))
 	print("==================")
 	generate_emotion_video(ray.get(emotions),"./testvdo.mp4")
