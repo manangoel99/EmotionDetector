@@ -19,24 +19,30 @@
                     <a class="navbar-brand"><span class="color-red">Emotion</span>Detector</a>
                     </div>
                     <ul class="nav navbar-nav">
-                    <li class="active"><a href="/dashboard">Home</a></li>
+                    <li><a href="/dashboard">Home</a></li>
                     <li><a href="/uploadsection">Upload Video</a></li>
-                    <li><a href="/allvideos">All Videos</a></li>
+                    <li class="active"><a href="/allvideos">All Videos</a></li>
                     <li><a href="/logout">Logout</a></li>
                     </ul>
             </div>
         </nav>
-
-        <div id="welcome-section" class="wrapper">
-                <div class="container">
-                    <h1>Welcome {{userinfo['nickname']}}!</h1><br>
-                    <p> You have processed xxx videos till now. <br>
-                        You can Upload a New Video
-                        or View All Processed Videos.
-                    </p>
-                    </div>
-            
+        
+        <div id="upload-section" class="wrapper">
+            <div class="container">
+                    {% if fileName %}
+                    <h1>Your Video has been uploaded!</h1>
+                    <p>{{prettyName}} is now available under "All Videos"</p>
+                    <div class="show-video">
+                        <div class="embed-responsive embed-responsive-16by9">
+                            <video controls autoplay class="embed-responsive-item">
+                                <source src="{{ url_for('static', filename=fileName) }}" type="video/mp4">
+                                Your browser does not support the video tag.
+                            </video>
+                        </div> 
+                    </div>     
+                    {% endif %}
             </div>
+            
+        </div>
     </body>
-
 </html>
