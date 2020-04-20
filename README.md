@@ -17,10 +17,15 @@ Create a new tab of the terminal and to set up the database
 ```
 docker-compose exec web python manage.py create_db
 ```
-To run commands inside the docker-conaitner
+To run commands inside the docker-container
 ```
 docker-compose exec web bash
 ```
+To check database
+```
+docker-compose exec db psql --username=hello_flask --dbname=hello_flask_dev
+```
+```\dt``` shows list of tables. Use simple sql commands for query.
 Please do not push the public folder
 -------------------------------
 To run the sample, make sure you have `python` and `pip` installed.
