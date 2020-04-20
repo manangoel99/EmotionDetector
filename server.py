@@ -108,7 +108,6 @@ def requires_auth(f):
 def home():
     return render_template('home.html')
 
-
 @app.route('/callback')
 def callback_handling():
     auth0.authorize_access_token()
@@ -308,6 +307,43 @@ def dashboard():
                            userinfo=session[constants.JWT_PAYLOAD],
                            userinfo_pretty=json.dumps(session[constants.JWT_PAYLOAD], indent=4))
 
+@app.route('/uploadsection')
+@requires_auth
+def uploadsection():
+    user = User.query.filter_by(email=session[constants.JWT_PAYLOAD]['email']).first()
+    logging.info(user)
+    if user is None:
+        task = create_user.apply(args=[session[constants.JWT_PAYLOAD]['email']])
+        logging.info(task.task_id)
+        user = User.query.filter_by(email=session[constants.JWT_PAYLOAD]['email']).first()
+        os.mkdir(os.path.join(app.config['UPLOAD_FOLDER'], str(user.id)))
+
+    user = User.query.filter_by(email=session[constants.JWT_PAYLOAD]['email']).first() 
+    logging.info(user)
+    return render_template('upload.html',
+                           userinfo=session[constants.JWT_PAYLOAD],
+                           userinfo_pretty=json.dumps(session[constants.JWT_PAYLOAD], indent=4))
+
+@app.route('/allvideos')
+@requires_auth
+def allvideos():
+    user = User.query.filter_by(email=session[constants.JWT_PAYLOAD]['email']).first()
+    logging.info(user)
+    if user is None:
+        task = create_user.apply(args=[session[constants.JWT_PAYLOAD]['email']])
+        logging.info(task.task_id)
+        user = User.query.filter_by(email=session[constants.JWT_PAYLOAD]['email']).first()
+        os.mkdir(os.path.join(app.config['UPLOAD_FOLDER'], str(user.id)))
+
+    user = User.query.filter_by(email=session[constants.JWT_PAYLOAD]['email']).first() 
+    logging.info(user)
+
+    #get all videos for user with this user id
+    return render_template('allvideos.html',
+                            #allVideos=----
+                           userinfo=session[constants.JWT_PAYLOAD],
+                           userinfo_pretty=json.dumps(session[constants.JWT_PAYLOAD], indent=4))
+
 @app.route('/dashboard', methods=['POST'])
 @requires_auth
 def upload_file():
@@ -315,7 +351,6 @@ def upload_file():
         user = User.query.filter_by(email=session[constants.JWT_PAYLOAD]['email']).first()
 
         if 'file' not in request.files:
-            flash('No file part')
             return redirect(request.url)
         file = request.files['file']
         if file.filename == '':
@@ -337,8 +372,8 @@ def upload_file():
             logging.info(vid.video_path)
 
             file.save(os.path.join(app.config['UPLOAD_FOLDER'], str(user.id), str(vid.id)))
-            flash('Successfully Uploaded')
-            return render_template('result.html', 
+            return render_template('allvideos.html', 
+                                    prettyName=file.filename,
                                     fileName=os.path.join(str(user.id), str(vid.id)),
                                     userinfo=session[constants.JWT_PAYLOAD],
                                     userinfo_pretty=json.dumps(session[constants.JWT_PAYLOAD], indent=4))

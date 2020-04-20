@@ -1,0 +1,38 @@
+
+.home {
+background-color: #0a193d;
+}
+  
+.login-box {
+padding: 1rem;
+width: 100%;
+padding: 0 6rem;
+text-align: left;
+color:white;
+}
+
+.vertical-center {
+min-height: 100%;  /* Fallback for browsers do NOT support vh unit */
+min-height: 100vh; /* These two lines are counted as one :-)       */
+display: flex;
+align-items: center;
+}
+
+.logo-img {
+float: left;
+max-width: 85%;
+margin-right: 7rem;
+}
+
+h1 {
+font-size: 5rem;
+}
+
+.color-red {
+color:#fd2953;
+font-weight: 600;
+}
+
+.fa-chevron-circle-right {
+color: white;
+}
