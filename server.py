@@ -157,17 +157,17 @@ def add_vid_path(self, video_id):
     db.session.add(vid)
     db.session.commit()
 
-def generate_emotion_video(ray_list, vid_path):
+def generate_emotion_video(ray_list, vid_path, size):
     cap = cv2.VideoCapture(vid_path)
     logging.info(vid_path)
     fps = cap.get(cv2.CAP_PROP_FPS)
-    while cap.isOpened():
-        ret,frame = cap.read()
-        if frame is None:
-            break
-        height, width, layers = frame.shape
-        size = (width,height)
-        break
+    # while cap.isOpened():
+    #     ret,frame = cap.read()
+    #     if frame is None:
+    #         break
+    #     height, width, layers = frame.shape
+    #     size = (width,height)
+    #     break
     cap.release()
     out = cv2.VideoWriter(vid_path + '_emotion.mp4',cv2.VideoWriter_fourcc(*'MP4V'), fps, size)
     ray_list = ray.get(ray_list)
@@ -259,12 +259,16 @@ def process_vid(vid_path):
     all_emotions = []
     detect = Model.remote()
     frames = []
+    size = None
     while cap.isOpened():
         ret, frame = cap.read()
         if frame is None:
             break
+        height, width, layers = frame.shape
+        size = (width, height)
+
         all_emotions.append(detect.predictFrame.remote(frame))
-    task = generate_emotion_video(all_emotions, vid_path)
+    task = generate_emotion_video(all_emotions, vid_path, size)
     logging.info(task)
     
 celery.register_task(create_user)
