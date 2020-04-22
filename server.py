@@ -28,7 +28,7 @@ import constants
 from notebooks.preprocess import preprocess_input
 from notebooks.utils import *
 import ray
-ray.init(num_cpus=1, ignore_reinit_error=True, lru_evict=True)
+ray.init(num_cpus=4, ignore_reinit_error=True)
 
 logging.basicConfig(level=logging.DEBUG)
 
@@ -170,7 +170,6 @@ def generate_emotion_video(ray_list, vid_path, size):
     #     break
     cap.release()
     out = cv2.VideoWriter(vid_path + '_emotion.mp4',cv2.VideoWriter_fourcc(*'MP4V'), fps, size)
-    looging.info("written video")
     ray_list = ray.get(ray_list)
     for iterx in ray_list:
         out.write(iterx[1])
@@ -274,7 +273,7 @@ def process_vid(vid_path):
         all_emotions.append(detect.predictFrame.remote(frame))
     task = generate_emotion_video(all_emotions, vid_path, size)
     logging.info(task)
-    return redirect('/allvideos')
+    return task
     
 celery.register_task(create_user)
 celery.register_task(create_vid)
@@ -289,10 +288,11 @@ def start_vid_processing(user_id, video_id):
     vid_path = os.path.join(app.config["UPLOAD_FOLDER"], str(user_id), str(video_id))
     logging.info(vid_path)
     start = time.time()
-    process_vid.remote(vid_path)
+    task = process_vid.remote(vid_path)
+    logging.info(task)
     end = time.time()
     logging.info(end - start)
-    return
+    return redirect('/allvideos')
 
 @app.route('/dashboard')
 @requires_auth
