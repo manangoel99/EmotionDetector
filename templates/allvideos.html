@@ -29,20 +29,29 @@
         
         <div id="upload-section" class="wrapper">
             <div class="container">
-                    {% if fileName %}
-                    <h1>Your Video has been uploaded!</h1>
-                    <p>{{prettyName}} is now available under "All Videos"</p>
-                    <div class="show-video">
-                        <div class="embed-responsive embed-responsive-16by9">
-                            <video controls autoplay class="embed-responsive-item">
-                                <source src="{{ url_for('static', filename=fileName) }}" type="video/mp4">
-                                Your browser does not support the video tag.
-                            </video>
-                        </div> 
-                    </div>     
-                    {% endif %}
+                {% if videos|length > 0 %}
+                    <h1>All Vidoes</h1>
+                    {% for video in videos %}
+                    <h3>{{video.video_title}}</h3>
+                        {% if video.processed == True %}
+                            <div class="show-video">
+                                <div class="embed-responsive embed-responsive-16by9">
+                                    <video controls autoplay class="embed-responsive-item">
+                                        <source src="{{ url_for('static', filename=video.video_path+'_emotion.mp4') }}" type="video/mp4">
+                                        Your browser does not support the video tag.
+                                    </video>
+                                </div> 
+                            </div>
+                        {% else %}
+                            <p>This video is still processing... </p>
+                        {% endif %}
+                    {% endfor %}
+                      
+                {% else %}
+                    <h1>You have no processed videos yet.</h1>
+                    <p>Upload a video to start processing!</p>
+                {% endif %}
             </div>
-            
         </div>
     </body>
 </html>
