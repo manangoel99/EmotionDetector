@@ -36,3 +36,8 @@ font-weight: 600;
 .fa-chevron-circle-right {
 color: white;
 }
+
+#qsLoginBtn {
+    text-decoration: none;
+    color: white;
+}
