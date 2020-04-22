@@ -78,6 +78,8 @@ class Video(db.Model):
         self.user_id = user_id
         self.video_title = vid_title
 
+from tasks import create_user, create_vid, add_vid_path
+
 oauth = OAuth(app)
 
 auth0 = oauth.register(
