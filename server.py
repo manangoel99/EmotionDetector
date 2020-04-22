@@ -273,7 +273,7 @@ def process_vid(vid_path):
         all_emotions.append(detect.predictFrame.remote(frame))
     task = generate_emotion_video(all_emotions, vid_path, size)
     logging.info(task)
-    return task
+    return redirect('/allvideos')
     
 celery.register_task(create_user)
 celery.register_task(create_vid)
@@ -288,11 +288,9 @@ def start_vid_processing(user_id, video_id):
     vid_path = os.path.join(app.config["UPLOAD_FOLDER"], str(user_id), str(video_id))
     logging.info(vid_path)
     start = time.time()
-    task = process_vid.remote(vid_path)
-    logging.info(task)
+    process_vid.remote(vid_path)
     end = time.time()
     logging.info(end - start)
-    return redirect('/allvideos')
 
 @app.route('/dashboard')
 @requires_auth
