@@ -346,6 +346,7 @@ def allvideos():
     user = User.query.filter_by(email=session[constants.JWT_PAYLOAD]['email']).first() 
     logging.info(user)
     video_list = Video.query.filter_by(user_id=user.id).all()
+    video_list = video_list[::-1]
     return render_template('allvideos.html',
                            videos = video_list,
                            userinfo=session[constants.JWT_PAYLOAD],
