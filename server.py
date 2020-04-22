@@ -42,7 +42,7 @@ AUTH0_CLIENT_SECRET = env.get(constants.AUTH0_CLIENT_SECRET)
 AUTH0_DOMAIN = env.get(constants.AUTH0_DOMAIN)
 AUTH0_BASE_URL = 'https://' + AUTH0_DOMAIN
 AUTH0_AUDIENCE = env.get(constants.AUTH0_AUDIENCE)
-UPLOAD_FOLDER = './public'
+UPLOAD_FOLDER = './public/'
 ALLOWED_EXTENSIONS = set(['mp4', 'avi', 'mkv'])
 
 
@@ -175,6 +175,7 @@ def generate_emotion_video(ray_list, vid_path, size):
         out.write(iterx[1])
 
     out.release()
+    logging.info(vid_path[len(UPLOAD_FOLDER) + 1:])
     video = Video.query.filter_by(video_path=vid_path[len(UPLOAD_FOLDER) + 1:]).first()
     video.processed = True
     db.session.commit()
@@ -255,6 +256,7 @@ class Model(object):
 @ray.remote
 def process_vid(vid_path):
     logging.info("Process Vid")
+    logging.info(vid_path)
     cap = cv2.VideoCapture(vid_path)
     all_emotions = []
     detect = Model.remote()
@@ -267,6 +269,7 @@ def process_vid(vid_path):
         height, width, layers = frame.shape
         size = (width, height)
 
+        
         all_emotions.append(detect.predictFrame.remote(frame))
     task = generate_emotion_video(all_emotions, vid_path, size)
     logging.info(task)
@@ -283,6 +286,7 @@ def allowed_file(filename):
 def vid(user_id, video_id):
     logging.info("In Function")
     vid_path = os.path.join(app.config["UPLOAD_FOLDER"], str(user_id), str(video_id))
+    logging.info(vid_path)
     start = time.time()
     task = process_vid.remote(vid_path)
     logging.info(task)
