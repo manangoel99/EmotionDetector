@@ -78,8 +78,6 @@ class Video(db.Model):
         self.user_id = user_id
         self.video_title = vid_title
 
-from tasks import create_user, create_vid, add_vid_path
-
 oauth = OAuth(app)
 
 auth0 = oauth.register(
@@ -137,6 +135,27 @@ def logout():
     params = {'returnTo': url_for('home', _external=True), 'client_id': AUTH0_CLIENT_ID}
     return redirect(auth0.api_base_url + '/v2/logout?' + urlencode(params))
 
+@celery.task(bind=True)
+def create_user(self, email):
+    new_user = User(email=email)
+    db.session.add(new_user)
+    db.session.commit()
+    self.update_state(state='COMPLETED')
+    logging.info("Created")
+    return 1
+
+@celery.task(bind=True)
+def create_vid(self, user_id, vid_name):
+    vid = Video(user_id, vid_name)
+    db.session.add(vid)
+    db.session.commit()
+
+@celery.task(bind=True)
+def add_vid_path(self, video_id):
+    vid = Video.query.filter_by(id=video_id).first()
+    vid.video_path = str(vid.user_id) + "/" + str(video_id)
+    db.session.add(vid)
+    db.session.commit()
 
 def generate_emotion_video(ray_list, vid_path, size):
     cap = cv2.VideoCapture(vid_path)
@@ -150,14 +169,15 @@ def generate_emotion_video(ray_list, vid_path, size):
     #     size = (width,height)
     #     break
     cap.release()
-    out = cv2.VideoWriter(vid_path + '_emotion.mp4',cv2.VideoWriter_fourcc(*'MP4V'), fps, size)
+    vid_id = int(vid_path.split("/")[-1])
+    out = cv2.VideoWriter(vid_path + '_emotion.webm',cv2.VideoWriter_fourcc(*'vp80'), fps, size)
     ray_list = ray.get(ray_list)
     for iterx in ray_list:
         out.write(iterx[1])
 
     out.release()
     logging.info(vid_path[len(UPLOAD_FOLDER) + 1:])
-    video = Video.query.filter_by(video_path=vid_path[len(UPLOAD_FOLDER) + 1:]).first()
+    video = Video.query.filter_by(id=vid_id).first()
     video.processed = True
     db.session.commit()
     return 1
