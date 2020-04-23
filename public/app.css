@@ -3,6 +3,7 @@ body {
   text-align: center;
   font-size: 300%;
   font-weight: 100;
+  margin-top: 10rem; 
 }
 h1,
 h2,
@@ -59,12 +60,44 @@ font-size: 2rem;
 .show-video {
   margin-top: 5rem;
   margin-bottom: 5rem; 
+  display:none;
+}
+
+.table {
+  width: 70%;
+  margin: auto;
+}
+
+.color-green {
+  color: green;
+}
+
+.color-orange {
+  color: rgba(255, 115, 0, 0.952);
+}
+
+.table > tbody > tr > td,
+.table > thead > tr > th {
+  padding: 2rem;
+  font-family: 'Roboto','Helvetica Neue',Helvetica,Arial,sans-serif;
+  font-size: 2rem;
+}
+
+.show-video-link {
+  background: none;
+  border: none;
+  color: rgb(72, 145, 214);
+}
+
+.show-video-link:hover {
+  text-decoration: underline;
 }
 
 .wrapper {
   margin: 3rem;
   max-width: 100%;
   text-align: left;
+  overflow-y: scroll;
 }
 
 #upload-container {
