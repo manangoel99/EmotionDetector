@@ -28,7 +28,7 @@ import constants
 from notebooks.preprocess import preprocess_input
 from notebooks.utils import *
 import ray
-ray.init(num_cpus=2, ignore_reinit_error=True, object_store_memory=10**9)
+ray.init(num_cpus=4, ignore_reinit_error=True)
 
 logging.basicConfig(level=logging.DEBUG)
 
