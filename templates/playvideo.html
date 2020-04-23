@@ -39,11 +39,13 @@
                 </div> 
             </div>
         </div>
-        <div class="chart" id="piechart">
-            <script>
+        <div class="upload-container">
+            <div class="embed-responsive embed-responsive-16by9">
+                <script>
                 var graphs = {{plot | safe}};
                 Plotly.plot('piechart',graphs,{});
             </script>
+            </div>
         </div>
     </body>
 </html>
