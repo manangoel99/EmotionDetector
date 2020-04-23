@@ -11,6 +11,8 @@
         <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
         <link href="/public/app.css" rel="stylesheet">
         <link href="/public/navbar.css" rel="stylesheet">
+        <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/3.5.6/d3.min.js"></script>    
     </head>
     <body class="home" style="background-color: #e7e7e7e7">
         <nav class="navbar navbar-default app-navbar navbar-fixed-top">
@@ -36,6 +38,12 @@
                     </video>
                 </div> 
             </div>
+        </div>
+        <div class="chart" id="piechart">
+            <script>
+                var graphs = {{plot | safe}};
+                Plotly.plot('piechart',graphs,{});
+            </script>
         </div>
     </body>
 </html>

@@ -8,6 +8,9 @@ import time
 import urllib.request
 from functools import wraps
 from os import environ as env
+import plotly
+import plotly.graph_objs as go
+
 
 import cv2
 import dlib
@@ -116,6 +119,51 @@ def logout():
     params = {'returnTo': url_for('home', _external=True), 'client_id': AUTH0_CLIENT_ID}
     return redirect(auth0.api_base_url + '/v2/logout?' + urlencode(params))
 
+def get_emotion_list(ray_list):
+    seq = {}
+    seq['angry']=0
+    seq['disgust']=0
+    seq['fear']=0
+    seq['happy']=0
+    seq['sad']=0
+    seq['surprise']=0
+    seq['neutral']=0
+    for it in ray.get(ray_list):
+        for it1 in it[0]:
+            if it1 == None:
+                break
+            seq[it1] += 1
+    return seq
+
+def create_plot(ray_list, vid_path):
+    tempData = get_emotion_list(ray_list)
+    labelsList = []
+    valuesList = []
+    for i in sorted (tempData) :
+        labelsList.append(i)
+        valuesList.append(tempData[i]) 
+
+    data = [
+        go.Pie(
+            labels=labelsList,
+            values=valuesList,
+            marker={
+                'colors':[
+                    'rgb(215, 11, 11)',
+                    'rgb(160, 160, 160)',
+                    'rgb(255, 255, 0)',
+                    'rgb(255, 51, 255)',
+                    'rgb(0, 204, 0)',
+                    'rgb(11, 133, 215)',
+                    'rgb(240, 88, 0)',
+                ]
+            }
+        )
+    ]
+
+    graphJSON = json.dumps(data, cls=plotly.utils.PlotlyJSONEncoder)
+    with open(vid_path + "_plot.json", "w") as outfile: 
+        outfile.write(graphJSON)
 
 def generate_emotion_video(ray_list, vid_path, size):
     cap = cv2.VideoCapture(vid_path)
@@ -132,6 +180,7 @@ def generate_emotion_video(ray_list, vid_path, size):
     vid_id = int(vid_path.split("/")[-1])
     out = cv2.VideoWriter(vid_path + '_emotion.webm',cv2.VideoWriter_fourcc(*'vp80'), fps, size)
     ray_list = ray.get(ray_list)
+    create_plot(ray_list, vid_path)
     for iterx in ray_list:
         out.write(iterx[1])
 
@@ -316,9 +365,13 @@ def allvideos():
 def playvideo():
     video_path = request.args.get('video_path', None)
     video_name = request.args.get('video_name', None)
+    with open(video_path +"_plot.json", "r") as openfile: 
+        plot = json.load(openfile) 
+
     return render_template('playvideo.html',
                            video_path = video_path,
-                           video_name = video_name)
+                           video_name = video_name,
+                           plot=plot)
 
 @app.route('/dashboard', methods=['POST'])
 @requires_auth
