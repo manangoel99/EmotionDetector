@@ -45,14 +45,14 @@
                   <tr id="vid_{{ video.id }}">
                       <td class="text-center">{{video.video_title}}</td>
                       <td class="text-center">
-                        {% if video.processed == False %}
+                        {% if video.processed == True %}
                         <div class="color-green">Complete</div>
                         {% else %}
                         <div class="color-orange">Processing...</div>
                         {% endif %}
                     </td>
                     <td class="text-center">
-                        {% if video.processed == False %}
+                        {% if video.processed == True %}
                         <a href="{{ url_for('playvideo', video_path=video.video_path, video_name=video.video_title) }}" target="_blank">Play Processed Video</a>
                         {% else %}
                         Not Ready
@@ -121,13 +121,15 @@
                                 text += "<td class='text-center'><div class='color-green'>Complete</div></td>"
                                 text += "<td class='text-center'>"
                                 text += '<a href="'
-                                text += "{{ url_for('playvideo', video_path="+response[not_matching_ids[i]]["video_path"]
-                                +", video_name="+response[not_matching_ids[i]]["video_title"]+" }}" 
+                                url = response[not_matching_ids[i]]["video_path"]
+                                title = response[not_matching_ids[i]]["video_title"]
+                                text += "{{ url_for('playvideo', video_path="+url+", video_title="+title+") }}" 
                                 text += '">Play Processed Video</a></td>'
                         
                             }
                             else {
-                                text += "<p>This video is still processing... </p>"
+                                text += "<td class='text-center'><div class='color-orange'>Processing...</div></td>"
+                                text += "<td class='text-center'>Not Ready</td>"
                             }
                             $("#vid_" + not_matching_ids[i]).html(text);
                         }
