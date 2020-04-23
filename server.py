@@ -344,3 +344,19 @@ def upload_file():
         else:
             flash('Allowed file type is mp4')
             return redirect(request.url)
+
+@app.route("/getVidStatus", methods=['GET'])
+@requires_auth
+def getVidStatus():
+    user = User.query.filter_by(email=session[constants.JWT_PAYLOAD]['email']).first()
+    
+    vids = Video.query.filter_by(user_id=user.id).all()
+    vids_json = {}
+    for vid in vids:
+        vids_json[vid.id] = {
+            "id" : vid.id,
+            "video_path" : vid.video_path,
+            "video_title" : vid.video_title,
+            "processed" : vid.processed
+        }
+    return jsonify(vids_json)

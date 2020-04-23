@@ -11,6 +11,8 @@
         <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
         <link href="/public/app.css" rel="stylesheet">
         <link href="/public/navbar.css" rel="stylesheet">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
     </head>
     <body class="home" style="background-color: #e7e7e7e7">
         <nav class="navbar navbar-default app-navbar">
@@ -28,23 +30,26 @@
         </nav>
         
         <div id="upload-section" class="wrapper">
-            <div class="container">
+            <div class="container" id="vid_list">
                 {% if videos|length > 0 %}
                     <h1>All Vidoes</h1>
                     {% for video in videos %}
-                    <h3>{{video.video_title}}</h3>
-                        {% if video.processed == True %}
-                            <div class="show-video">
-                                <div class="embed-responsive embed-responsive-16by9">
-                                    <video controls autoplay class="embed-responsive-item">
-                                        <source src="{{ url_for('static', filename=video.video_path+'_emotion.webm') }}" type="video/webm">
-                                        Your browser does not support the video tag.
-                                    </video>
-                                </div> 
-                            </div>
-                        {% else %}
-                            <p>This video is still processing... </p>
-                        {% endif %}
+                    <div id="vid_{{ video.id }}">
+                        <h3>{{video.video_title}}</h3>
+                            {% if video.processed == True %}
+                                <div class="show-video">
+                                    <div class="embed-responsive embed-responsive-16by9">
+                                        <video controls autoplay class="embed-responsive-item">
+                                            <source src="{{ url_for('static', filename=video.video_path+'_emotion.webm') }}" type="video/webm">
+                                            Your browser does not support the video tag.
+                                        </video>
+                                    </div> 
+                                </div>
+                            {% else %}
+                                <p>This video is still processing... </p>
+                            {% endif %}
+                    </div>
+
                     {% endfor %}
                       
                 {% else %}
@@ -54,4 +59,78 @@
             </div>
         </div>
     </body>
+    <script>
+        orig_state = []
+        $(document).ready(() => {
+            orig_state = {};
+            {% for video in videos %}
+                {% if video.processed == True %}
+                    orig_state[{{video.id}}] = true;
+                {% else %}
+                    orig_state[{{video.id}}] = false;
+                {% endif %}
+            {% endfor %}
+            for (var i = 0; i < orig_state.length; i++) {
+
+                if (orig_state[i] == "True") {
+                    orig_state[i] = true;
+                }
+                else {
+                    orig_state[i] = false;
+                }
+            }
+            console.log(orig_state);
+
+            curr_state = []
+            function getData() {
+                $.ajax({
+                    url: "{{ url_for('getVidStatus') }}",
+                    type: "get",
+                    success: function(response) {
+                        curr_state = {}
+                        for (var i in response) {
+                            curr_state[response[i]["id"]] = response[i]["processed"];
+                        }
+                        not_matching_ids = [];
+                        for (var i in response) {
+                            if (orig_state[response[i]["id"]] == undefined) {
+                                var t = document.createElement("div");
+                                console.log(t);
+                                t.className += "vid_" + response[i]["id"];
+                                x = document.getElementById("vid_list");
+                                x.insertBefore(t, x.childNodes[0]);
+                                not_matching_ids.push(response[i]["id"]);
+                            }
+                            else if (curr_state[response[i]["id"]] != orig_state[response[i]["id"]]) {
+                                not_matching_ids.push(response[i]["id"]);
+                            }
+                        }
+
+                        for (let i = 0; i < not_matching_ids.length; i++) {
+                            text = "<h3>"+ response[not_matching_ids[i]]["video_title"] +"</h3>\n";
+                            if (curr_state[not_matching_ids[i]] == true) {
+                                text += "<div class='show-video'>\n"
+                                text += "<div class='embed-responsive embed-responsive-16by9'>\n"
+                                text += "<video controls autoplay class='embed-responsive-item'>\n"
+                                url = "/public/" + response[not_matching_ids[i]]["video_path"] + "_emotion.webm";
+                                text += "<source src='" + url + "' type='video/webm'>\n";
+                                text += "Your browser does not support the video tag.\n";
+                                text += "</video>";
+                                text += "</div>";
+                                text += "</div>";
+                            }
+                            else {
+                                text += "<p>This video is still processing... </p>"
+                            }
+                            $("#vid_" + not_matching_ids[i]).html(text);
+                        }
+                        orig_state = curr_state;
+
+                    }
+                });
+            }
+
+            setInterval(getData, 5000)
+        });
+    </script>
 </html>
