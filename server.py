@@ -128,7 +128,7 @@ def get_emotion_list(ray_list):
     seq['sad']=0
     seq['surprise']=0
     seq['neutral']=0
-    for it in ray.get(ray_list):
+    for it in ray_list:
         for it1 in it[0]:
             if it1 == None:
                 break
