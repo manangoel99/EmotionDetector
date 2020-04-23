@@ -365,7 +365,7 @@ def allvideos():
 def playvideo():
     video_path = request.args.get('video_path', None)
     video_name = request.args.get('video_name', None)
-    with open(video_path +"_plot.json", "r") as openfile: 
+    with open(app.config["UPLOAD_FOLDER"] + "/" + video_path +"_plot.json", "r") as openfile: 
         plot = json.load(openfile) 
 
     return render_template('playvideo.html',
