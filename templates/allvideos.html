@@ -11,6 +11,8 @@
         <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
         <link href="/public/app.css" rel="stylesheet">
         <link href="/public/navbar.css" rel="stylesheet">
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js"></script>
+
     </head>
     <body class="home" style="background-color: #e7e7e7e7">
         <nav class="navbar navbar-default app-navbar navbar-fixed-top">
@@ -40,7 +42,7 @@
                   </thead>
                   <tbody>
                   {% for video in videos %}
-                  <tr>
+                  <tr id="vid_{{ video.id }}">
                       <td class="text-center">{{video.video_title}}</td>
                       <td class="text-center">
                         {% if video.processed == False %}
@@ -64,6 +66,78 @@
                 <h1>You have no processed videos yet.</h1>
                 <p>Upload a video to start processing!</p>
             {% endif %}    
-        </div>
+        
     </body>
+    <script>
+        orig_state = []
+        $(document).ready(() => {
+            orig_state = {};
+            {% for video in videos %}
+                {% if video.processed == True %}
+                    orig_state[{{video.id}}] = true;
+                {% else %}
+                    orig_state[{{video.id}}] = false;
+                {% endif %}
+            {% endfor %}
+            for (var i = 0; i < orig_state.length; i++) {
+
+                if (orig_state[i] == "True") {
+                    orig_state[i] = true;
+                }
+                else {
+                    orig_state[i] = false;
+                }
+            }
+            console.log(orig_state);
+
+            curr_state = []
+            function getData() {
+                $.ajax({
+                    url: "{{ url_for('getVidStatus') }}",
+                    type: "get",
+                    success: function(response) {
+                        curr_state = {}
+                        for (var i in response) {
+                            curr_state[response[i]["id"]] = response[i]["processed"];
+                        }
+                        not_matching_ids = [];
+                        for (var i in response) {
+                            if (orig_state[response[i]["id"]] == undefined) {
+                                var t = document.createElement("div");
+                                console.log(t);
+                                t.className += "vid_" + response[i]["id"];
+                                x = document.getElementById("vid_list");
+                                x.insertBefore(t, x.childNodes[0]);
+                                not_matching_ids.push(response[i]["id"]);
+                            }
+                            else if (curr_state[response[i]["id"]] != orig_state[response[i]["id"]]) {
+                                not_matching_ids.push(response[i]["id"]);
+                            }
+                        }
+
+                        for (let i = 0; i < not_matching_ids.length; i++) {
+                            text = "<td>"+ response[not_matching_ids[i]]["video_title"] +"</td>\n";
+                            if (curr_state[not_matching_ids[i]] == true) {
+                                text += "<td class='text-center'><div class='color-green'>Complete</div></td>"
+                                text += "<td class='text-center'>"
+                                text += '<a href="'
+                                text += "{{ url_for('playvideo', video_path="+response[not_matching_ids[i]]["video_path"]
+                                +", video_name="+response[not_matching_ids[i]]["video_title"]+" }}" 
+                                text += '">Play Processed Video</a></td>'
+                        
+                            }
+                            else {
+                                text += "<p>This video is still processing... </p>"
+                            }
+                            $("#vid_" + not_matching_ids[i]).html(text);
+                        }
+                        orig_state = curr_state;
+
+                    }
+                });
+            }
+
+            setInterval(getData, 5000)
+        });
+    </script>
 </html>
