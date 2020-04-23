@@ -1,8 +1,11 @@
+body {
+margin-top: 0;    
+}
 
 .home {
 background-color: #0a193d;
 }
-  
+    
 .login-box {
 padding: 1rem;
 width: 100%;

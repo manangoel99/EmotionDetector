@@ -12,6 +12,7 @@
         <link href="/public/app.css" rel="stylesheet">
         <link href="/public/navbar.css" rel="stylesheet">
     </head>
+    <title> Upload Video </title>
     <body class="home" style="background-color: #e7e7e7e7">
         <nav class="navbar navbar-default app-navbar navbar-fixed-top">
                 <div class="container-fluid">
@@ -53,7 +54,7 @@
         {% with messages = get_flashed_messages() %}
             {% if messages %}
             <div class="wrapper">
-            <div class="container color-red">            
+            <div class="container color-red text-center">            
             {% for message in messages %}
                 <p>{{ message }}</p>
             {% endfor %}
@@ -70,7 +71,7 @@
         function triggerForm(e){
             var fileName = e.target.files[0].name;
             document.getElementById('submit').style.display='';
-            document.getElementById('video-upload-text').innerHTML='Your file ' + fileName + ' is selected';
+            document.getElementById('video-upload-text').innerHTML='Your file ' + fileName + ' is selected <a href="/uploadsection">&times</a>';
         }
         function startProcess() {
             document.getElementById('video-upload-text').innerHTML='Uploading ....';
