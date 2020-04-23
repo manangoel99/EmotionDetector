@@ -35,7 +35,8 @@
                 <table class="table table-striped">
                   <thead>
                     <tr>
-                      <th class="text-center">Video</th>
+                      <th class="text-center">Id</th>  
+                      <th class="text-center">Title</th>
                       <th class="text-center">Status</th>
                       <th class="text-center">Link</th>
                     </tr>
@@ -43,6 +44,7 @@
                   <tbody>
                   {% for video in videos %}
                   <tr id="vid_{{ video.id }}">
+                      <td class="text-center">{{ video.id }}</td>
                       <td class="text-center">{{video.video_title}}</td>
                       <td class="text-center">
                         {% if video.processed == True %}
@@ -116,15 +118,22 @@
                         }
 
                         for (let i = 0; i < not_matching_ids.length; i++) {
-                            text = "<td>"+ response[not_matching_ids[i]]["video_title"] +"</td>\n";
+                            text = "<td class='text-center'>"+response[not_matching_ids[i]]["id"]+"</td>\n"
+                            text += "<td class='text-center'>"+ response[not_matching_ids[i]]["video_title"] +"</td>\n";
                             if (curr_state[not_matching_ids[i]] == true) {
-                                text += "<td class='text-center'><div class='color-green'>Complete</div></td>"
+                                text += "<td class='text-center'><div class='color-green'>Complete</div></td>\n"
                                 text += "<td class='text-center'>"
                                 text += '<a href="'
                                 url = response[not_matching_ids[i]]["video_path"]
                                 title = response[not_matching_ids[i]]["video_title"]
-                                text += "{{ url_for('playvideo', video_path="+url+", video_title="+title+") }}" 
+                                console.log(url)
+                                console.log(title)
+                                text += "/playvideo?video_path="
+                                text += url
+                                text += "&video_name="
+                                text += title 
                                 text += '">Play Processed Video</a></td>'
+                                console.log(text)
                         
                             }
                             else {
