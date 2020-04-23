@@ -311,6 +311,15 @@ def allvideos():
                            userinfo=session[constants.JWT_PAYLOAD],
                            userinfo_pretty=json.dumps(session[constants.JWT_PAYLOAD], indent=4))
 
+@app.route('/playvideo')
+@requires_auth
+def playvideo():
+    video_path = request.args.get('video_path', None)
+    video_name = request.args.get('video_name', None)
+    return render_template('playvideo.html',
+                           video_path = video_path,
+                           video_name = video_name)
+
 @app.route('/dashboard', methods=['POST'])
 @requires_auth
 def upload_file():

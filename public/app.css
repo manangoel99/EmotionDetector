@@ -58,9 +58,8 @@ font-size: 2rem;
 }
 
 .show-video {
-  margin-top: 5rem;
-  margin-bottom: 5rem; 
-  display:none;
+  width : 70%;
+  margin:auto; 
 }
 
 .table {
@@ -81,16 +80,6 @@ font-size: 2rem;
   padding: 2rem;
   font-family: 'Roboto','Helvetica Neue',Helvetica,Arial,sans-serif;
   font-size: 2rem;
-}
-
-.show-video-link {
-  background: none;
-  border: none;
-  color: rgb(72, 145, 214);
-}
-
-.show-video-link:hover {
-  text-decoration: underline;
 }
 
 .wrapper {

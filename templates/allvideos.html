@@ -51,7 +51,7 @@
                     </td>
                     <td class="text-center">
                         {% if video.processed == False %}
-                        <button class="show-video-link" onclick="showVideo()">Play This Video</button>
+                        <a href="{{ url_for('playvideo', video_path=video.video_path, video_name=video.video_title) }}" target="_blank">Play Processed Video</a>
                         {% else %}
                         Not Ready
                         {% endif %}
@@ -66,16 +66,4 @@
             {% endif %}    
         </div>
     </body>
-    <script>
-        function trigger(e){
-            if (document.getElementById('show-video').style.visibility == 'hidden')
-            {
-                document.getElementById('show-video').style.visibility='visible';
-                document.getElementById('show-video-button').innerHTML='Close Player';
-            } else {
-                document.getElementById('show-video').style.visibility='hidden';
-                document.getElementById('show-video-button').innerHTML='Play Processed Video';
-            }
-        }
-    </script>
 </html>
