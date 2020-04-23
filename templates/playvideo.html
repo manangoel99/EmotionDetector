@@ -44,9 +44,16 @@
         <div class="container">
             <div id="piechart">
                 <script>
-                var graphs = {{plot | safe}};
-                console.log(graphs);
-                Plotly.plot('piechart',graphs,{});
+                var graph1 = {{plot1 | safe}};
+                console.log(graph1);
+                Plotly.plot('piechart',graph1,{});
+            </script>
+            </div>
+            <div id="linechart">
+                <script>
+                var graph2 = {{plot2 | safe}};
+                console.log(graph2);
+                Plotly.plot('linechart',graph2,{});
             </script>
             </div>
         </div>

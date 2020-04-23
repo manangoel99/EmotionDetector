@@ -128,7 +128,7 @@ def logout():
     return redirect(auth0.api_base_url + '/v2/logout?' + urlencode(params))
 
 def get_emotion_list(ray_list):
-    seq = {}
+    seq,time_seq = {},{}
     seq['angry']=0
     seq['disgust']=0
     seq['fear']=0
@@ -136,41 +136,64 @@ def get_emotion_list(ray_list):
     seq['sad']=0
     seq['surprise']=0
     seq['neutral']=0
+    time_seq['angry']=[]
+    time_seq['disgust']=[]
+    time_seq['fear']=[]
+    time_seq['happy']=[]
+    time_seq['sad']=[]
+    time_seq['surprise']=[]
+    time_seq['neutral']=[]
     for it in ray_list:
         for it1 in it[0]:
             if it1 == None:
                 break
             seq[it1] += 1
-    return seq
+        for it in time_seq.keys():
+        	time_seq[it].append(seq[it])
+    return seq,time_seq
 
 def create_plot(ray_list, vid_path):
-    tempData = get_emotion_list(ray_list)
+    tempData,time_data = get_emotion_list(ray_list)
     labelsList = []
     valuesList = []
     for i in sorted (tempData) :
         labelsList.append(i)
-        valuesList.append(tempData[i]) 
-
+        valuesList.append(tempData[i])
     data = [
         go.Pie(
             labels=labelsList,
             values=valuesList,
             marker={
-                'colors':[
-                    '#e16552',
-                    '#447c69',
-                    '#993767',
-                    '#74c493',
-                    '#3c8e9d',
-                    '#e9d78e',
-                    '#e4bf80',
-                ]
+                'colors': ['#e16552','#447c69','#993767','#74c493','#3c8e9d','#e9d78e','#e4bf80']
             }
         )
     ]
+    labels_2,time_seq = [],[]
+    for i in sorted(time_data.keys()):
+        labels_2.append(i)
+        time_seq.append(time_data[i])
+    color_seq = ['#e16552','#447c69','#993767','#74c493','#3c8e9d','#e9d78e','#e4bf80']
+    data_2 = []
+    for c in range(len(labels_2)):
+        trace1 = {
+          "line": {
+            "color": color_seq[c], 
+            "shape": "spline", 
+            "width": 3
+          }, 
+          "mode": "lines", 
+          "name": labels_2[c], 
+          "type": "scatter", 
+          "x": [i for i in range(len(time_seq[c]))],
+          "y": time_seq[c]
+        }
+        data_2.append(trace1)
 
     graphJSON = json.dumps(data, cls=plotly.utils.PlotlyJSONEncoder)
-    with open(vid_path + "_plot.json", "w") as outfile: 
+    with open(vid_path + "_plot_1.json", "w") as outfile: 
+        outfile.write(graphJSON)
+    graphJSON = json.dumps(data_2, cls=plotly.utils.PlotlyJSONEncoder)
+    with open(vid_path + "_plot_2.json", "w") as outfile: 
         outfile.write(graphJSON)
 
 def generate_emotion_video(ray_list, vid_path, size):
@@ -419,14 +442,16 @@ def playvideo():
     video_path = request.args.get('video_path', None)
     video_name = request.args.get('video_name', None)
     try:
-        with open(app.config["UPLOAD_FOLDER"] + "/" + video_path +"_plot.json", "r") as openfile: 
-            plot = json.load(openfile) 
+        with open(app.config["UPLOAD_FOLDER"] + "/" + video_path +"_plot_1.json", "r") as openfile: 
+            plot_1 = json.load(openfile) 
+        with open(app.config["UPLOAD_FOLDER"] + "/" + video_path +"_plot_2.json", "r") as openfile: 
+            plot_2 = json.load(openfile) 
     except:
-        print("Error in importing Pie Chart visualisation")
+        print("Error in importing Pie Chart and Line visualisation")
     return render_template('playvideo.html',
                            video_path = video_path,
                            video_name = video_name,
-                           plot=plot)
+                           plot1=plot_1,plot2=plot_2)
 
 @app.route('/dashboard', methods=['POST'])
 @requires_auth
