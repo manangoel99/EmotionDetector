@@ -128,6 +128,17 @@ def logout():
     return redirect(auth0.api_base_url + '/v2/logout?' + urlencode(params))
 
 def get_emotion_list(ray_list):
+	"""
+	Returns a Time Series Cumulative Count of Emotions and
+	Count of Total Emotions
+
+	Parameters:
+		ray_list(list<list<string>>): List of Emotions Detected in Each Frame
+
+	Returns:
+		seq(dictionary: string->int): Count of Total Emotions
+		time_seq(dictionary: string->list): Time Series Cumulative Count of Emotions over all frames 
+	"""
     seq,time_seq = {},{}
     seq['angry']=0
     seq['disgust']=0
@@ -197,6 +208,20 @@ def create_plot(ray_list, vid_path):
         outfile.write(graphJSON)
 
 def generate_emotion_video(ray_list, vid_path, size):
+	"""
+	Generates the video marked with emotions in frames and saves
+	it in the database
+
+	Parameters:
+		ray_list (list<tuple(emotions,frame)>): A list of Tuple of Emotions Corresponding to 
+												the Frame
+		vid_path (string): Path the Final Video has to be stored
+		size (tuple(int,int)): Width and Height of Each Frame
+
+	Returns:
+		1: If Video Successfully Stored and Path written in Database
+		0: Otherwise
+	"""
     cap = cv2.VideoCapture(vid_path)
     logging.info(vid_path)
     fps = cap.get(cv2.CAP_PROP_FPS)
@@ -238,6 +263,9 @@ def generate_emotion_video(ray_list, vid_path, size):
 @ray.remote
 class Model(object):
 	def __init__(self):
+		"""
+		Contructor for Class Model
+		"""
 		from keras.models import load_model
 		emotion_model_path = './notebooks/model.hdf5'
 		self.labels = {
@@ -256,6 +284,17 @@ class Model(object):
 	
 
 	def predictFace(self, gray_image, face):
+		"""
+		Predict Emotion for the Given Face in the Frame
+
+		Parameters:
+			gray_image (2D int list): Comtains the Black and White Representation
+									  for the given frame
+			face (object<rectangle>): Arguments of Face Detected using dlib.get_frontal_face_detector()
+
+		Returns:
+			emotion_text (string): Emotion Detected for the given face
+		"""
 		emotion_target_size = self.emotion_classifier.input_shape[1:3]
 
 		x1, x2, y1, y2 = apply_offsets(face_utils.rect_to_bb(face), self.emotion_offsets)
@@ -275,6 +314,17 @@ class Model(object):
 		return emotion_text
 
 	def predictFrame(self, frame):
+		"""
+		Predict Emotion of Each Frame for the Given Frame
+
+		Parameters:
+			frame (3D int list): Contains the RGB representation for the Given Frame
+
+		Returns:
+			each_face_emotion (list<string>): List of Emotions detected
+			tframe (3D int list): Frame marked with emotions for each frame in a
+								  bounding box along with text 
+		"""
 		gray_image = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 		rgb_image = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 		faces = self.detector(rgb_image)
