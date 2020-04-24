@@ -27,6 +27,13 @@ docker-compose exec db psql --username=hello_flask --dbname=hello_flask_dev
 ```
 ```\dt``` shows list of tables. Use simple sql commands for query.
 Please do not push the public folder
+<br>
+To run tests
+```
+docker-compose up --build
+docker-compose exec web bash
+py.test
+```
 -------------------------------
 To run the sample, make sure you have `python` and `pip` installed.
 
