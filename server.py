@@ -128,17 +128,15 @@ def logout():
     return redirect(auth0.api_base_url + '/v2/logout?' + urlencode(params))
 
 def get_emotion_list(ray_list):
-	"""
-	Returns a Time Series Cumulative Count of Emotions and
-	Count of Total Emotions
-
-	Parameters:
-		ray_list(list<list<string>>): List of Emotions Detected in Each Frame
-
-	Returns:
-		seq(dictionary: string->int): Count of Total Emotions
-		time_seq(dictionary: string->list): Time Series Cumulative Count of Emotions over all frames 
-	"""
+    """
+    Returns a Time Series Cumulative Count of Emotions and
+    Count of Total Emotions 
+    Parameters:
+    	ray_list(list<list<string>>): List of Emotions Detected in Each Frame   
+    Returns:
+    	seq(dictionary: string->int): Count of Total Emotions
+    	time_seq(dictionary: string->list): Time Series Cumulative Count of Emotions over all frames 
+    """
     seq,time_seq = {},{}
     seq['angry']=0
     seq['disgust']=0
@@ -208,20 +206,18 @@ def create_plot(ray_list, vid_path):
         outfile.write(graphJSON)
 
 def generate_emotion_video(ray_list, vid_path, size):
-	"""
-	Generates the video marked with emotions in frames and saves
-	it in the database
-
-	Parameters:
-		ray_list (list<tuple(emotions,frame)>): A list of Tuple of Emotions Corresponding to 
-												the Frame
-		vid_path (string): Path the Final Video has to be stored
-		size (tuple(int,int)): Width and Height of Each Frame
-
-	Returns:
-		1: If Video Successfully Stored and Path written in Database
-		0: Otherwise
-	"""
+    """
+    Generates the video marked with emotions in frames and saves
+    it in the database  
+    Parameters:
+    	ray_list (list<tuple(emotions,frame)>): A list of Tuple of Emotions Corresponding to 
+    											the Frame
+    	vid_path (string): Path the Final Video has to be stored
+    	size (tuple(int,int)): Width and Height of Each Frame   
+    Returns:
+    	1: If Video Successfully Stored and Path written in Database
+    	0: Otherwise
+    """
     cap = cv2.VideoCapture(vid_path)
     logging.info(vid_path)
     fps = cap.get(cv2.CAP_PROP_FPS)
