@@ -221,13 +221,6 @@ def generate_emotion_video(ray_list, vid_path, size):
     cap = cv2.VideoCapture(vid_path)
     logging.info(vid_path)
     fps = cap.get(cv2.CAP_PROP_FPS)
-    # while cap.isOpened():
-    #     ret,frame = cap.read()
-    #     if frame is None:
-    #         break
-    #     height, width, layers = frame.shape
-    #     size = (width,height)
-    #     break
     cap.release()
     vid_id = int(vid_path.split("/")[-1])
     try:
