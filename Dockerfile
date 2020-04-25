@@ -35,10 +35,8 @@ WORKDIR /home/app
 RUN mkdir public
 #If we add the requirements and install dependencies first, docker can use cache if requirements don't change
 ADD requirements.txt /home/app
-ADD requirements1.txt /home/app
 
 RUN pip install -r requirements.txt
-RUN pip install -r requirements1.txt
 
 ADD . /home/app
 ENV FLASK_APP /home/app/server.py
