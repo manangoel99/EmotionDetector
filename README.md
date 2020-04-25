@@ -8,8 +8,8 @@ For the emotion detection, we divided the task into 2 parts
 - Face Detection : The face detection in each frame is done by the [face-recognition](https://github.com/ageitgey/face_recognition) library which uses [dlib](http://dlib.net/)'s state of the art face detection model which has 99.38% accuracy. It returns the coordinates of the faces in each frame and then we run our emotion detection model on these faces.
 - Emotion Detection : For emotion detection we obtained our dataset from a [Kaggle Challenge](https://www.kaggle.com/c/emotion-detection-from-facial-expressions) which gave us a clean, labelled dataset. The model was built in keras with a tensorflow backend and it uses seperable convolution to get the image features on which linear layers are applied followed by a softmax to get probabilities of each emotion. We deployed the model using keras and it takes each frame as input and gives the emotions on each face in the frame as output.
 - We also stored how each emotion varies during the duration of the video which can be used to draw conclusions about the reactions of people in the video. For example : A video of students in a class may give information about how the students interest level changes through the duration of the class.
-<br>
 ----------------------
+
 The Horizonatal expansion of the system can be done quite easily.
 - Celery : Changing the number of processes and memory in ```docker-compose.yml``` for the celery worker.
 - Ray : In the ```ray.init()``` command in ```server.py``` we can easily change the number of CPUs and the RAM available.
