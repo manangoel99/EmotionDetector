@@ -549,3 +549,10 @@ def getVidStatus():
     except:
         user = None
     return jsonify(vids_json)
+
+@app.errorhandler(HTTPException)
+def handle_exception(e):
+    return render_template('error.html',
+                           error_code = e.code,
+                           error_name = e.name,
+                           error_description=e.description)
